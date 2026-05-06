@@ -1,0 +1,8 @@
+export enum StatutPaiement {
+  EN_ATTENTE = 'EN_ATTENTE',
+  TRAITEMENT_EN_COURS = 'TRAITEMENT_EN_COURS',
+  PAYE = 'PAYE',
+  REFUSE = 'REFUSE',
+  REMBOURSE = 'REMBOURSE',
+  ANNULE = 'ANNULE'
+}

@@ -3,7 +3,7 @@
 Application de gestion de commandes avec Spring Boot et Angular.  
   
 ## Technologies  
-- Backend: Spring Boot 3, JPA/Hibernate, MySQL  
+- Backend: Spring Boot 3, JPA/Hibernate, XAMPP  
 - Frontend: Angular 17, TypeScript, Bootstrap  
   
 ## Installation  

@@ -1,98 +1,95 @@
 package com.example.gestioncommandes1.service;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.example.gestioncommandes1.entity.Commande;
 import com.example.gestioncommandes1.entity.Paiement;
 import com.example.gestioncommandes1.entity.StatutCommande;
 import com.example.gestioncommandes1.entity.StatutPaiement;
 import com.example.gestioncommandes1.repository.CommandeRepository;
 import com.example.gestioncommandes1.repository.PaiementRepository;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
-@Transactional
 public class PaiementService {
-    
-    private final PaiementRepository paiementRepository;
-    private final CommandeRepository commandeRepository;
-    
-    // Créer un paiement
+
+    @Autowired
+    private PaiementRepository paiREP;
+
+    @Autowired
+    private CommandeRepository cmdREP;
+
+    // CREATE
     public Paiement creerPaiement(Long commandeId, String mode) {
-        Commande commande = commandeRepository.findById(commandeId)
-                .orElseThrow(() -> new EntityNotFoundException("Commande non trouvée"));
-        
-        if (commande.getPaiement() != null) {
-            throw new IllegalStateException("Cette commande a déjà un paiement");
-        }
-        
+        Commande commande = cmdREP.findById(commandeId).orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Commande non trouvée")
+        );
+
         Paiement paiement = new Paiement();
         paiement.setCommande(commande);
         paiement.setMode(mode);
         paiement.setStatut(StatutPaiement.EN_ATTENTE);
-        
-        return paiementRepository.save(paiement);
+
+        return paiREP.save(paiement);
     }
-    
-    // Traiter le paiement (simulation)
-    public Paiement traiterPaiement(Long paiementId) {
-        Paiement paiement = getPaiementById(paiementId);
-        
-        if (paiement.getStatut() != StatutPaiement.EN_ATTENTE) {
-            throw new IllegalStateException("Paiement déjà traité");
-        }
-        
-        // Simulation : 90% de chances de succès
-        boolean succes = Math.random() > 0.1;
-        
-        if (succes) {
-            paiement.setStatut(StatutPaiement.PAYE);
-            
-            // 🔥 IMPORTANT : Met à jour le statut de la commande
-            Commande commande = paiement.getCommande();
-            commande.setStatut(StatutCommande.EN_COURS_DE_TRAITEMENT);
-            commandeRepository.save(commande);
-            
-        } else {
-            paiement.setStatut(StatutPaiement.REFUSE);
-        }
-        
-        return paiementRepository.save(paiement);
+
+    // TRAITER
+    public ResponseEntity<String> traiterPaiement(Long id) {
+        paiREP.findById(id).ifPresentOrElse(
+            paiement -> {
+                boolean succes = Math.random() > 0.1;
+                if (succes) {
+                    paiement.setStatut(StatutPaiement.PAYE);
+                    Commande commande = paiement.getCommande();
+                    commande.setStatut(StatutCommande.EN_COURS_DE_TRAITEMENT);
+                    cmdREP.save(commande);
+                } else {
+                    paiement.setStatut(StatutPaiement.REFUSE);
+                }
+                paiREP.save(paiement);
+            },
+            () -> {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Paiement non trouvé");
+            }
+        );
+        return ResponseEntity.ok("Paiement traité avec succès");
     }
-    
-    // Rembourser
-    public Paiement rembourser(Long paiementId) {
-        Paiement paiement = getPaiementById(paiementId);
-        
-        if (paiement.getStatut() != StatutPaiement.PAYE) {
-            throw new IllegalStateException("Seuls les paiements payés peuvent être remboursés");
-        }
-        
-        paiement.setStatut(StatutPaiement.REMBOURSE);
-        return paiementRepository.save(paiement);
+
+    // REMBOURSER
+    public ResponseEntity<String> rembourser(Long id) {
+        paiREP.findById(id).ifPresentOrElse(
+            paiement -> {
+                paiement.setStatut(StatutPaiement.REMBOURSE);
+                paiREP.save(paiement);
+            },
+            () -> {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Paiement non trouvé");
+            }
+        );
+        return ResponseEntity.ok("Paiement remboursé avec succès");
     }
-    
-    // GET
-    @Transactional(readOnly = true)
+
+    // GET ONE
     public Paiement getPaiementById(Long id) {
-        return paiementRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Paiement non trouvé"));
+        return paiREP.findById(id).orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Paiement non trouvé")
+        );
     }
-    
-    @Transactional(readOnly = true)
+
+    // GET PAR COMMANDE
     public Paiement getPaiementByCommande(Long commandeId) {
-        return paiementRepository.findByCommandeId(commandeId)
-                .orElseThrow(() -> new EntityNotFoundException("Pas de paiement pour cette commande"));
+        return paiREP.findByCommandeId(commandeId).orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pas de paiement pour cette commande")
+        );
     }
-    
-    
-    @Transactional(readOnly = true)
+
+    // GET ALL
     public List<Paiement> getAllPaiements() {
-        return paiementRepository.findAll();
+        return paiREP.findAll();
     }
 }

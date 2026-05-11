@@ -1,62 +1,58 @@
 package com.example.gestioncommandes1.controller;
 
-import com.example.gestioncommandes1.entity.Client;
-import com.example.gestioncommandes1.service.ClientService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import com.example.gestioncommandes1.entity.Client;
+import com.example.gestioncommandes1.service.ClientService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/clients")
-@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 @Tag(name = "Clients", description = "Gestion des clients")
-@CrossOrigin(origins = "*")  // Pour Angular
 public class ClientController {
-    
-    private final ClientService clientService;
-    
+
+    @Autowired
+    private ClientService clientService;
+
     // CREATE
     @PostMapping
     @Operation(summary = "Créer un client")
-    public ResponseEntity<Client> creerClient(@Valid @RequestBody Client client) {
-        Client nouveauClient = clientService.creerClient(client);
-        return new ResponseEntity<>(nouveauClient, HttpStatus.CREATED);
+    public Client creerClient(@RequestBody Client client) {
+        return clientService.creerClient(client);
     }
-    
-    // READ ALL
+
+    // GET ALL
     @GetMapping
     @Operation(summary = "Liste tous les clients")
-    public ResponseEntity<List<Client>> getAllClients() {
-        return ResponseEntity.ok(clientService.getAllClients());
+    public List<Client> getAllClients() {
+        return clientService.getAllClients();
     }
-    
-    // READ ONE
+
+    // GET ONE
     @GetMapping("/{id}")
     @Operation(summary = "Obtenir un client par ID")
-    public ResponseEntity<Client> getClientById(@PathVariable Long id) {
-        return ResponseEntity.ok(clientService.getClientById(id));
+    public Client getClientById(@PathVariable Long id) {
+        return clientService.getClientById(id);
     }
-    
+
     // UPDATE
     @PutMapping("/{id}")
     @Operation(summary = "Modifier un client")
-    public ResponseEntity<Client> updateClient(
-            @PathVariable Long id,
-            @Valid @RequestBody Client client) {
-        return ResponseEntity.ok(clientService.updateClient(id, client));
+    public ResponseEntity<String> updateClient(@PathVariable Long id, @RequestBody Client client) {
+        return clientService.updateClient(id, client);
     }
-    
+
     // DELETE
     @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer un client")
-    public ResponseEntity<Void> deleteClient(@PathVariable Long id) {
+    public void deleteClient(@PathVariable Long id) {
         clientService.deleteClient(id);
-        return ResponseEntity.noContent().build();
     }
 }

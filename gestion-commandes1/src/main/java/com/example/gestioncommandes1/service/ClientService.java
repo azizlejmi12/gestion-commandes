@@ -1,62 +1,57 @@
 package com.example.gestioncommandes1.service;
 
-import com.example.gestioncommandes1.entity.Client;
-import com.example.gestioncommandes1.repository.ClientRepository;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.example.gestioncommandes1.entity.Client;
+import com.example.gestioncommandes1.repository.ClientRepository;
+
 @Service
-@RequiredArgsConstructor
-@Transactional
 public class ClientService {
-    
-    private final ClientRepository clientRepository;
-    
+
+    @Autowired
+    private ClientRepository cREP;
+
     // CREATE
     public Client creerClient(Client client) {
-        if (clientRepository.existsByEmail(client.getEmail())) {
-            throw new IllegalArgumentException("Email déjà utilisé");
-        }
-        return clientRepository.save(client);
+        return cREP.save(client);
     }
-    
+
     // READ ALL
-    @Transactional(readOnly = true)
     public List<Client> getAllClients() {
-        return clientRepository.findAll();
+        return cREP.findAll();
     }
-    
+
     // READ ONE
-    @Transactional(readOnly = true)
     public Client getClientById(Long id) {
-        return clientRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Client non trouvé avec id: " + id));
+        return cREP.findById(id).orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client non trouvé")
+        );
     }
-    
+
     // UPDATE
-    public Client updateClient(Long id, Client clientDetails) {
-        Client client = getClientById(id);
-        
-        // Vérifier si le nouvel email n'est pas déjà pris par un autre client
-        if (!client.getEmail().equals(clientDetails.getEmail()) 
-                && clientRepository.existsByEmail(clientDetails.getEmail())) {
-            throw new IllegalArgumentException("Email déjà utilisé");
-        }
-        
-        client.setNom(clientDetails.getNom());
-        client.setEmail(clientDetails.getEmail());
-        client.setAdresse(clientDetails.getAdresse());
-        
-        return clientRepository.save(client);
+    public ResponseEntity<String> updateClient(Long id, Client clientDetails) {
+        cREP.findById(id).ifPresentOrElse(
+            client -> {
+                client.setNom(clientDetails.getNom());
+                client.setEmail(clientDetails.getEmail());
+                client.setAdresse(clientDetails.getAdresse());
+                cREP.save(client);
+            },
+            () -> {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Client non trouvé");
+            }
+        );
+        return ResponseEntity.ok("Client mis à jour avec succès");
     }
-    
+
     // DELETE
     public void deleteClient(Long id) {
-        Client client = getClientById(id);
-        clientRepository.delete(client);
+        cREP.deleteById(id);
     }
 }

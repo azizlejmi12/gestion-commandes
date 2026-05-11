@@ -1,8 +1,8 @@
-import { StatutPaiement } from './statut-paiement.enum';
+import { StatutPaiement } from "./statut-paiement.enum";
 
 export interface Paiement {
   id?: number;
-  commande?: { id?: number; montantTotal?: number };  // ✅ AJOUTE CECI
+  commandeId?: number;
   date?: string;
   statut: StatutPaiement;
   mode: string;

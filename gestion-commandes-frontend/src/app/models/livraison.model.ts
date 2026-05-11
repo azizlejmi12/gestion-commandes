@@ -1,11 +1,10 @@
-import { StatutLivraison } from './statut-livraison.enum';
-import { Commande } from './commande.model';
-import { Transporteur } from './transporteur.model';
+import { StatutLivraison } from "./statut-livraison.enum";
 
 export interface Livraison {
   id?: number;
-  commande?: Partial<Commande>;
-  transporteur?: Transporteur;
+  commandeId?: number;
+  transporteurId?: number;
+  transporteurNom?: string;
   dateLivraison?: string;
   cout?: number;
   statut: StatutLivraison;

@@ -84,8 +84,8 @@ export class ClientHistoriqueComponent implements OnInit {
     this.commandeService.getHistoriqueClient(this.clientId).subscribe({
       next: (data) => {
         this.commandes = data;
-        if (data.length > 0 && data[0].client) {
-          this.clientNom = data[0].client.nom;
+        if (data.length > 0 && data[0].clientNom) {
+          this.clientNom = data[0].clientNom;
         }
       },
       error: (err) => {

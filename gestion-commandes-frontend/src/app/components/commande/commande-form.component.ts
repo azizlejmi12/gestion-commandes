@@ -4,10 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { CommandeService } from '../../services/commande.service';
 import { ClientService } from '../../services/client.service';
-import { Commande } from '../../models/commande.model';
 import { Client } from '../../models/client.model';
 import { LigneCommande } from '../../models/ligne-commande.model';
-import { StatutCommande } from '../../models/statut-commande.enum';
 
 @Component({
   selector: 'app-commande-form',
@@ -55,10 +53,10 @@ import { StatutCommande } from '../../models/statut-commande.enum';
         <h4>Total: {{ getTotal() | currency:'EUR' }}</h4>
       </div>
 
-      <button class="btn btn-success" (click)="onSubmit()" [disabled]="!selectedClientId || lignes.length === 0">
+      <button type="button" class="btn btn-success" (click)="onSubmit()">
         Créer la commande
       </button>
-      <button class="btn btn-secondary" routerLink="/commandes">Annuler</button>
+      <button type="button" class="btn btn-secondary" routerLink="/commandes">Annuler</button>
     </div>
   `,
   styles: [`
@@ -88,7 +86,7 @@ export class CommandeFormComponent implements OnInit {
       next: (data) => this.clients = data,
       error: (err) => console.error('Erreur chargement clients:', err)
     });
-    this.addLigne(); // Ajouter une ligne vide par défaut
+    this.addLigne();
   }
 
   addLigne(): void {
@@ -112,13 +110,26 @@ export class CommandeFormComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (!this.selectedClientId || this.lignes.length === 0) return;
+    if (!this.selectedClientId) {
+      alert('Veuillez sélectionner un client !');
+      return;
+    }
+    if (this.lignes.length === 0) {
+      alert('Veuillez ajouter au moins une ligne !');
+      return;
+    }
 
-    // Filtrer les lignes vides
     const lignesValides = this.lignes.filter(l => l.produit && l.quantite > 0 && l.prixUnitaire > 0);
-    
-    this.commandeService.createCommande(this.selectedClientId, lignesValides).subscribe({
-      next: () => this.router.navigate(['/commandes']),
+
+    if (lignesValides.length === 0) {
+      alert('Veuillez remplir les lignes correctement !');
+      return;
+    }
+
+    this.commandeService.createCommande(Number(this.selectedClientId), lignesValides).subscribe({
+      next: () => {
+        void this.router.navigate(['/commandes']);
+      },
       error: (err) => console.error('Erreur création commande:', err)
     });
   }

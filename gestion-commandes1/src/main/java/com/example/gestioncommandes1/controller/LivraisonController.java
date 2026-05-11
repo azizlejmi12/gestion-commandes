@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.gestioncommandes1.entity.Livraison;
+import com.example.gestioncommandes1.dto.LivraisonDTO;
+import com.example.gestioncommandes1.mapper.LivraisonMapper;
 import com.example.gestioncommandes1.service.LivraisonService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,14 +22,17 @@ public class LivraisonController {
     @Autowired
     private LivraisonService livraisonService;
 
+    @Autowired
+    private LivraisonMapper livraisonMapper;
+
     // CREATE
     @PostMapping("/commande/{commandeId}")
     @Operation(summary = "Créer une livraison pour une commande")
-    public Livraison creerLivraison(
+    public LivraisonDTO creerLivraison(
             @PathVariable Long commandeId,
             @RequestParam(required = false) Long transporteurId,
             @RequestParam Double cout) {
-        return livraisonService.creerLivraison(commandeId, transporteurId, cout);
+        return livraisonMapper.toDto(livraisonService.creerLivraison(commandeId, transporteurId, cout));
     }
 
     // EXPEDIER
@@ -48,21 +52,21 @@ public class LivraisonController {
     // GET ALL
     @GetMapping
     @Operation(summary = "Liste toutes les livraisons")
-    public List<Livraison> getAllLivraisons() {
-        return livraisonService.getAllLivraisons();
+    public List<LivraisonDTO> getAllLivraisons() {
+        return livraisonMapper.toListDto(livraisonService.getAllLivraisons());
     }
 
     // GET ONE
     @GetMapping("/{id}")
     @Operation(summary = "Obtenir une livraison par ID")
-    public Livraison getLivraisonById(@PathVariable Long id) {
-        return livraisonService.getLivraisonById(id);
+    public LivraisonDTO getLivraisonById(@PathVariable Long id) {
+        return livraisonMapper.toDto(livraisonService.getLivraisonById(id));
     }
 
     // GET PAR COMMANDE
     @GetMapping("/commande/{commandeId}")
     @Operation(summary = "Suivre la livraison d'une commande")
-    public Livraison getLivraisonByCommande(@PathVariable Long commandeId) {
-        return livraisonService.getLivraisonByCommande(commandeId);
+    public LivraisonDTO getLivraisonByCommande(@PathVariable Long commandeId) {
+        return livraisonMapper.toDto(livraisonService.getLivraisonByCommande(commandeId));
     }
 }

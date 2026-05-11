@@ -56,8 +56,8 @@ import { StatutPaiement } from '../../models/statut-paiement.enum';
         <tbody>
           <tr *ngFor="let p of paiements">
             <td>{{ p.id }}</td>
-            <td>#{{ p.commande?.id }}</td>
-            <td>{{ p.commande?.montantTotal | currency:'EUR' }}</td>
+            <td>#{{ p.commandeId }}</td>
+            <td>{{ getCommandeAmount(p.commandeId!) }}</td>
             <td>{{ p.mode }}</td>
             <td>
               <span class="badge" [ngClass]="getStatutClass(p.statut)">{{ p.statut }}</span>
@@ -135,5 +135,10 @@ export class PaiementListComponent implements OnInit {
       case 'REMBOURSE': return 'bg-secondary';
       default: return 'bg-secondary';
     }
+  }
+
+  getCommandeAmount(commandeId: number): string {
+    const commande = this.commandes.find(c => c.id === commandeId);
+    return commande ? (commande.montantTotal || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '-';
   }
 }

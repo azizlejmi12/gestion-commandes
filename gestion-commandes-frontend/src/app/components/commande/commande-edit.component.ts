@@ -14,7 +14,7 @@ import { StatutCommande } from '../../models/statut-commande.enum';
   template: `
     <div class="container">
       <h2>Modifier Commande #{{ commande.id }}</h2>
-      <p>Client: <strong>{{ commande.client.nom }}</strong></p>
+      <p>Client: <strong>{{ commande.clientNom }}</strong></p>
       <p>Statut: <span class="badge bg-warning">{{ commande.statut }}</span></p>
       
       <div class="alert alert-info">
@@ -33,7 +33,7 @@ import { StatutCommande } from '../../models/statut-commande.enum';
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let ligne of commande.lignesCommande; let i = index">
+          <tr *ngFor=\"let ligne of commande.lignesCommande || []; let i = index\">
             <td><input class="form-control" [(ngModel)]="ligne.produit"></td>
             <td><input type="number" class="form-control" [(ngModel)]="ligne.quantite" (change)="calculerTotal()"></td>
             <td><input type="number" class="form-control" [(ngModel)]="ligne.prixUnitaire" (change)="calculerTotal()"></td>
@@ -61,10 +61,9 @@ import { StatutCommande } from '../../models/statut-commande.enum';
 })
 export class CommandeEditComponent implements OnInit {
   commande: Commande = {
-    client: {} as any,
     statut: StatutCommande.EN_ATTENTE,
     lignesCommande: []
-  };
+};
 
   constructor(
     private commandeService: CommandeService,

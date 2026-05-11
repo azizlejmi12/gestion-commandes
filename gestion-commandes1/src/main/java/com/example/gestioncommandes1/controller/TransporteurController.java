@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.gestioncommandes1.dto.TransporteurDTO;
 import com.example.gestioncommandes1.entity.Transporteur;
+import com.example.gestioncommandes1.mapper.TransporteurMapper;
 import com.example.gestioncommandes1.service.TransporteurService;
+
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,25 +24,28 @@ public class TransporteurController {
     @Autowired
     private TransporteurService transporteurService;
 
+    @Autowired
+    private TransporteurMapper transporteurMapper;
+
     // CREATE
     @PostMapping
     @Operation(summary = "Créer un transporteur")
-    public Transporteur creerTransporteur(@RequestBody Transporteur transporteur) {
-        return transporteurService.creerTransporteur(transporteur);
+    public TransporteurDTO creerTransporteur(@RequestBody Transporteur transporteur) {
+    	return transporteurMapper.toDto(transporteurService.creerTransporteur(transporteur));
     }
 
     // GET ALL
     @GetMapping
     @Operation(summary = "Liste tous les transporteurs")
-    public List<Transporteur> getAllTransporteurs() {
-        return transporteurService.getAllTransporteurs();
+    public List<TransporteurDTO> getAllTransporteurs() {
+        return transporteurMapper.toListDto(transporteurService.getAllTransporteurs());
     }
 
     // GET ONE
     @GetMapping("/{id}")
     @Operation(summary = "Obtenir un transporteur par ID")
-    public Transporteur getTransporteurById(@PathVariable Long id) {
-        return transporteurService.getTransporteurById(id);
+    public TransporteurDTO getTransporteurById(@PathVariable Long id) {
+        return transporteurMapper.toDto(transporteurService.getTransporteurById(id));
     }
 
     // UPDATE

@@ -30,7 +30,7 @@ import { Commande } from '../../models/commande.model';
         <tbody>
           <tr *ngFor="let commande of commandes">
             <td>{{ commande.id }}</td>
-            <td>{{ commande.client.nom }}</td>
+            <td>{{ commande.clientNom }}</td>
             <td>{{ commande.date | date:'short' }}</td>
             <td>
               <span class="badge" [ngClass]="getStatutClass(commande.statut)">

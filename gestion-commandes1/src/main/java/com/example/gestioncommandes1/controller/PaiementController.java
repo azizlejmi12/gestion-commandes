@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.gestioncommandes1.entity.Paiement;
+import com.example.gestioncommandes1.dto.PaiementDTO;
+import com.example.gestioncommandes1.mapper.PaiementMapper;
 import com.example.gestioncommandes1.service.PaiementService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,13 +22,16 @@ public class PaiementController {
     @Autowired
     private PaiementService paiementService;
 
+    @Autowired
+    private PaiementMapper paiementMapper;
+
     // CREATE
     @PostMapping("/commande/{commandeId}")
     @Operation(summary = "Créer un paiement pour une commande")
-    public Paiement creerPaiement(
+    public PaiementDTO creerPaiement(
             @PathVariable Long commandeId,
             @RequestParam String mode) {
-        return paiementService.creerPaiement(commandeId, mode);
+        return paiementMapper.toDto(paiementService.creerPaiement(commandeId, mode));
     }
 
     // TRAITER
@@ -47,21 +51,21 @@ public class PaiementController {
     // GET ALL
     @GetMapping
     @Operation(summary = "Liste tous les paiements")
-    public List<Paiement> getAllPaiements() {
-        return paiementService.getAllPaiements();
+    public List<PaiementDTO> getAllPaiements() {
+        return paiementMapper.toListDto(paiementService.getAllPaiements());
     }
 
     // GET ONE
     @GetMapping("/{id}")
     @Operation(summary = "Obtenir un paiement par ID")
-    public Paiement getPaiementById(@PathVariable Long id) {
-        return paiementService.getPaiementById(id);
+    public PaiementDTO getPaiementById(@PathVariable Long id) {
+        return paiementMapper.toDto(paiementService.getPaiementById(id));
     }
 
     // GET PAR COMMANDE
     @GetMapping("/commande/{commandeId}")
     @Operation(summary = "Obtenir le paiement d'une commande")
-    public Paiement getPaiementByCommande(@PathVariable Long commandeId) {
-        return paiementService.getPaiementByCommande(commandeId);
+    public PaiementDTO getPaiementByCommande(@PathVariable Long commandeId) {
+        return paiementMapper.toDto(paiementService.getPaiementByCommande(commandeId));
     }
 }

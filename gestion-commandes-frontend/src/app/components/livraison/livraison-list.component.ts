@@ -37,7 +37,7 @@ import { StatutLivraison } from '../../models/statut-livraison.enum';
               <select class="form-control" [(ngModel)]="newLivraison.commandeId">
                 <option value="">-- Sélectionner --</option>
                 <option *ngFor="let c of commandesLivrables" [value]="c.id">
-                  #{{c.id}} - {{c.client.nom}} ({{c.montantTotal | currency:'EUR'}})
+                  #{{c.id}} - {{c.clientNom}} ({{c.montantTotal | currency:'EUR'}})
                 </option>
               </select>
               <small class="text-muted" *ngIf="commandesLivrables.length === 0">
@@ -87,9 +87,9 @@ import { StatutLivraison } from '../../models/statut-livraison.enum';
         <tbody>
           <tr *ngFor="let l of livraisons" [class.table-success]="l.statut === 'LIVREE'">
             <td>{{ l.id }}</td>
-            <td>#{{ l.commande?.id }}</td>
-            <td>{{ l.commande?.client?.nom }}</td>
-            <td>{{ l.transporteur?.nom || '-' }}</td>
+            <td>#{{ l.commandeId }}</td>
+            <td>Commande #{{ l.commandeId }}</td>
+            <td>{{ l.transporteurNom || '-' }}</td>
             <td>{{ l.cout | currency:'EUR' }}</td>
             <td>
               <span class="badge" [ngClass]="getStatutClass(l.statut)">
@@ -169,7 +169,7 @@ export class LivraisonListComponent implements OnInit {
 
         const commandesDejaLivrees = new Set(
           livraisons
-            .map(livraison => livraison.commande?.id)
+            .map(livraison => livraison.commandeId)
             .filter((id): id is number => id !== undefined)
         );
 

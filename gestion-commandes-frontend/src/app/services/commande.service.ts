@@ -20,22 +20,20 @@ export class CommandeService {
     return this.http.get<Commande>(`${this.apiUrl}/${id}`);
   }
 
-  createCommande(clientId: number, lignes: LigneCommande[]): Observable<Commande> {
-    return this.http.post<Commande>(`${this.apiUrl}/client/${clientId}`, lignes);
+  createCommande(clientId: number, lignes: LigneCommande[]): Observable<string> {
+    return this.http.post(`${this.apiUrl}/client/${clientId}`, lignes, { responseType: 'text' });
   }
 
-  // ✅ AJOUTE CECI
-  updateCommande(id: number, commande: Commande): Observable<Commande> {
-    return this.http.put<Commande>(`${this.apiUrl}/${id}`, commande);
+  updateCommande(id: number, commande: Commande): Observable<string> {
+    return this.http.put<string>(`${this.apiUrl}/${id}`, commande);
   }
 
-  // ✅ AJOUTE CECI
   deleteCommande(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  validerCommande(id: number): Observable<Commande> {
-    return this.http.put<Commande>(`${this.apiUrl}/${id}/valider`, {});
+  validerCommande(id: number): Observable<string> {
+    return this.http.put<string>(`${this.apiUrl}/${id}/valider`, {});
   }
 
   getHistoriqueClient(clientId: number): Observable<Commande[]> {

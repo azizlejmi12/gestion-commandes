@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.gestioncommandes1.dto.ClientDTO;
 import com.example.gestioncommandes1.entity.Client;
+import com.example.gestioncommandes1.mapper.ClientMapper;
 import com.example.gestioncommandes1.service.ClientService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,25 +23,28 @@ public class ClientController {
     @Autowired
     private ClientService clientService;
 
+    @Autowired
+    private ClientMapper clientMapper;
+
     // CREATE
     @PostMapping
     @Operation(summary = "Créer un client")
-    public Client creerClient(@RequestBody Client client) {
-        return clientService.creerClient(client);
+    public ClientDTO creerClient(@RequestBody Client client) {
+        return clientMapper.toDto(clientService.creerClient(client));
     }
 
     // GET ALL
     @GetMapping
     @Operation(summary = "Liste tous les clients")
-    public List<Client> getAllClients() {
-        return clientService.getAllClients();
+    public List<ClientDTO> getAllClients() {
+        return clientMapper.toListDto(clientService.getAllClients());
     }
 
     // GET ONE
     @GetMapping("/{id}")
     @Operation(summary = "Obtenir un client par ID")
-    public Client getClientById(@PathVariable Long id) {
-        return clientService.getClientById(id);
+    public ClientDTO getClientById(@PathVariable Long id) {
+        return clientMapper.toDto(clientService.getClientById(id));
     }
 
     // UPDATE

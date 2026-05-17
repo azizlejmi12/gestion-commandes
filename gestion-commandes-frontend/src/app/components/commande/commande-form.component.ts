@@ -14,49 +14,51 @@ import { LigneCommande } from '../../models/ligne-commande.model';
   template: `
     <div class="container">
       <h2>Nouvelle Commande</h2>
-      
-      <div class="form-group">
-        <label>Client</label>
-        <select class="form-control" [(ngModel)]="selectedClientId" name="client" required>
-          <option value="">-- Sélectionner un client --</option>
-          <option *ngFor="let client of clients" [value]="client.id">
-            {{ client.nom }} ({{ client.email }})
-          </option>
-        </select>
-      </div>
 
-      <h3>Lignes de commande</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Produit</th>
-            <th>Quantité</th>
-            <th>Prix Unitaire</th>
-            <th>Sous-total</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let ligne of lignes; let i = index">
-            <td><input type="text" class="form-control" [(ngModel)]="ligne.produit" name="produit{{i}}"></td>
-            <td><input type="number" class="form-control" [(ngModel)]="ligne.quantite" name="quantite{{i}}" min="1"></td>
-            <td><input type="number" class="form-control" [(ngModel)]="ligne.prixUnitaire" name="prix{{i}}" min="0" step="0.01"></td>
-            <td>{{ getSousTotal(ligne) | currency:'EUR' }}</td>
-            <td><button class="btn btn-danger" (click)="removeLigne(i)">X</button></td>
-          </tr>
-        </tbody>
-      </table>
-      
-      <button class="btn btn-secondary" (click)="addLigne()">+ Ajouter une ligne</button>
-      
-      <div class="total">
-        <h4>Total: {{ getTotal() | currency:'EUR' }}</h4>
-      </div>
+      <form (ngSubmit)="onSubmit()" #commandeForm="ngForm">
+        <div class="form-group">
+          <label>Client</label>
+          <select class="form-control" [(ngModel)]="selectedClientId" name="client" required>
+            <option value="">-- Sélectionner un client --</option>
+            <option *ngFor="let client of clients" [ngValue]="client.id">
+              {{ client.nom }} ({{ client.email }})
+            </option>
+          </select>
+        </div>
 
-      <button type="button" class="btn btn-success" (click)="onSubmit()">
-        Créer la commande
-      </button>
-      <button type="button" class="btn btn-secondary" routerLink="/commandes">Annuler</button>
+        <h3>Lignes de commande</h3>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Quantité</th>
+              <th>Prix Unitaire</th>
+              <th>Sous-total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ligne of lignes; let i = index">
+              <td><input type="text" class="form-control" [(ngModel)]="ligne.produit" name="produit{{i}}"></td>
+              <td><input type="number" class="form-control" [(ngModel)]="ligne.quantite" name="quantite{{i}}" min="1"></td>
+              <td><input type="number" class="form-control" [(ngModel)]="ligne.prixUnitaire" name="prix{{i}}" min="0" step="0.01"></td>
+              <td>{{ getSousTotal(ligne) | currency:'EUR' }}</td>
+              <td><button type="button" class="btn btn-danger" (click)="removeLigne(i)">X</button></td>
+            </tr>
+          </tbody>
+        </table>
+      
+        <button type="button" class="btn btn-secondary" (click)="addLigne()">+ Ajouter une ligne</button>
+      
+        <div class="total">
+          <h4>Total: {{ getTotal() | currency:'EUR' }}</h4>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+          Créer la commande
+        </button>
+        <button type="button" class="btn btn-secondary" routerLink="/commandes">Annuler</button>
+      </form>
     </div>
   `,
   styles: [`
@@ -74,6 +76,7 @@ export class CommandeFormComponent implements OnInit {
   clients: Client[] = [];
   selectedClientId: number | null = null;
   lignes: LigneCommande[] = [];
+  initialCommandesCount = 0;
 
   constructor(
     private commandeService: CommandeService,
@@ -86,6 +89,12 @@ export class CommandeFormComponent implements OnInit {
       next: (data) => this.clients = data,
       error: (err) => console.error('Erreur chargement clients:', err)
     });
+
+    this.commandeService.getAllCommandes().subscribe({
+      next: (data) => this.initialCommandesCount = data.length,
+      error: (err) => console.error('Erreur chargement commandes initiales:', err)
+    });
+
     this.addLigne();
   }
 
@@ -130,7 +139,31 @@ export class CommandeFormComponent implements OnInit {
       next: () => {
         void this.router.navigate(['/commandes']);
       },
-      error: (err) => console.error('Erreur création commande:', err)
+      error: (err) => {
+        console.error('Erreur création commande:', err);
+        this.waitForCreatedCommande(0);
+      }
     });
+  }
+
+  private waitForCreatedCommande(attempt: number): void {
+    if (attempt >= 5) {
+      alert('Erreur lors de la création de la commande');
+      return;
+    }
+
+    setTimeout(() => {
+      this.commandeService.getAllCommandes().subscribe({
+        next: (commandes) => {
+          if (commandes.length > this.initialCommandesCount) {
+            void this.router.navigate(['/commandes']);
+            return;
+          }
+
+          this.waitForCreatedCommande(attempt + 1);
+        },
+        error: () => this.waitForCreatedCommande(attempt + 1)
+      });
+    }, 300);
   }
 }

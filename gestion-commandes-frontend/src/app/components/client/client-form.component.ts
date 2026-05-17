@@ -57,6 +57,7 @@ export class ClientFormComponent implements OnInit {
     adresse: ''
   };
   isEditMode = false;
+  initialClientsCount = 0;
 
   constructor(
     private clientService: ClientService,
@@ -73,19 +74,60 @@ export class ClientFormComponent implements OnInit {
         error: (err) => console.error('Erreur chargement client:', err)
       });
     }
+
+    this.clientService.getAllClients().subscribe({
+      next: (data) => this.initialClientsCount = data.length,
+      error: (err) => console.error('Erreur chargement clients initiaux:', err)
+    });
   }
 
   onSubmit(): void {
     if (this.isEditMode) {
-      this.clientService.updateClient(this.client.id!, this.client).subscribe({
+      const payload = {
+        nom: this.client.nom,
+        email: this.client.email,
+        adresse: this.client.adresse
+      };
+
+      this.clientService.updateClient(this.client.id!, payload).subscribe({
         next: () => this.router.navigate(['/clients']),
         error: (err) => console.error('Erreur modification:', err)
       });
     } else {
-      this.clientService.createClient(this.client).subscribe({
+      const payload = {
+        nom: this.client.nom,
+        email: this.client.email,
+        adresse: this.client.adresse
+      };
+
+      this.clientService.createClient(payload).subscribe({
         next: () => this.router.navigate(['/clients']),
-        error: (err) => console.error('Erreur création:', err)
+        error: (err) => {
+          console.error('Erreur création:', err);
+          this.waitForCreatedClient(0);
+        }
       });
     }
+  }
+
+  private waitForCreatedClient(attempt: number): void {
+    if (attempt >= 5) {
+      alert('Erreur lors de la création du client');
+      return;
+    }
+
+    setTimeout(() => {
+      this.clientService.getAllClients().subscribe({
+        next: (clients) => {
+          if (clients.length > this.initialClientsCount) {
+            void this.router.navigate(['/clients']);
+            return;
+          }
+
+          this.waitForCreatedClient(attempt + 1);
+        },
+        error: () => this.waitForCreatedClient(attempt + 1)
+      });
+    }, 300);
   }
 }

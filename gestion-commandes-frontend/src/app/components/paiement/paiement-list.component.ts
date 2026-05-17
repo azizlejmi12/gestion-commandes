@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { PaiementService } from '../../services/paiement.service';
 import { CommandeService } from '../../services/commande.service';
 import { Paiement } from '../../models/paiement.model';
@@ -15,6 +17,7 @@ import { StatutPaiement } from '../../models/statut-paiement.enum';
   template: `
     <div class="container">
       <h2>Gestion des Paiements</h2>
+      <button class="btn btn-primary mb-3" routerLink="/paiements/new">+ Nouveau Paiement</button>
       
       <!-- Créer paiement -->
       <div class="card mb-3">
@@ -24,7 +27,7 @@ import { StatutPaiement } from '../../models/statut-paiement.enum';
             <div class="col">
               <select class="form-control" [(ngModel)]="newPaiement.commandeId">
                 <option value="">-- Commande --</option>
-                <option *ngFor="let c of commandes" [value]="c.id">Commande #{{c.id}} ({{c.montantTotal | currency:'EUR'}})</option>
+                <option *ngFor="let c of commandesEligibles" [value]="c.id">Commande #{{c.id}} ({{ getMontantCommande(c) | currency:'EUR' }})</option>
               </select>
             </div>
             <div class="col">
@@ -63,6 +66,7 @@ import { StatutPaiement } from '../../models/statut-paiement.enum';
               <span class="badge" [ngClass]="getStatutClass(p.statut)">{{ p.statut }}</span>
             </td>
             <td>
+              <button class="btn btn-sm btn-info me-1" [routerLink]="['/paiements', p.id]">Voir</button>
               <button class="btn btn-sm btn-success" (click)="traiter(p.id!)" *ngIf="p.statut === 'EN_ATTENTE'">Payer</button>
               <button class="btn btn-sm btn-warning" (click)="rembourser(p.id!)" *ngIf="p.statut === 'PAYE'">Rembourser</button>
             </td>
@@ -83,6 +87,7 @@ import { StatutPaiement } from '../../models/statut-paiement.enum';
 export class PaiementListComponent implements OnInit {
   paiements: Paiement[] = [];
   commandes: Commande[] = [];
+  commandesEligibles: Commande[] = [];
   newPaiement = { commandeId: null as number | null, mode: 'CARTE' };
 
   constructor(
@@ -95,35 +100,99 @@ export class PaiementListComponent implements OnInit {
   }
 
   loadAll(): void {
-    // Note: Il faudrait ajouter getAllPaiements() dans le service
-    // Pour l'instant, on charge par commande
-    this.commandeService.getAllCommandes().subscribe(data => {
-      this.commandes = data;
-      // Charger les paiements pour chaque commande
-      this.paiements = []; // Reset
-      data.forEach(c => {
-        if (c.id) {
-          this.paiementService.getPaiementByCommande(c.id).subscribe({
-            next: (p) => this.paiements.push(p),
-            error: () => {} // Ignorer si pas de paiement
-          });
+    forkJoin({
+      commandes: this.commandeService.getAllCommandes(),
+      paiements: this.paiementService.getAllPaiements()
+    }).subscribe({
+      next: ({ commandes, paiements }) => {
+        this.commandes = commandes;
+        this.paiements = paiements;
+
+        const commandesDejaPayees = new Set(
+          paiements
+            .filter(paiement => paiement.statut === StatutPaiement.PAYE && paiement.commandeId !== undefined && paiement.commandeId !== null)
+            .map(paiement => String(paiement.commandeId))
+        );
+
+        const commandesEligibles = commandes.filter(
+          commande => commande.id !== undefined && commande.id !== null && !commandesDejaPayees.has(String(commande.id))
+        );
+
+        if (commandesEligibles.length === 0) {
+          this.commandesEligibles = [];
+          return;
         }
-      });
+
+        forkJoin(
+          commandesEligibles.map(commande =>
+            this.paiementService.getPaiementByCommande(commande.id!).pipe(
+              catchError(() => of(null))
+            )
+          )
+        ).subscribe({
+          next: (paiementsParCommande) => {
+            this.commandesEligibles = commandesEligibles.filter((commande, index) => {
+              const paiement = paiementsParCommande[index] as Paiement | null;
+              return !paiement || paiement.statut !== StatutPaiement.PAYE;
+            });
+          },
+          error: (err) => console.error('Erreur chargement paiements par commande:', err)
+        });
+      },
+      error: (err) => console.error('Erreur chargement paiements/commandes:', err)
     });
   }
 
   createPaiement(): void {
-    if (!this.newPaiement.commandeId) return;
+    if (!this.newPaiement.commandeId) {
+      alert('Veuillez sélectionner une commande');
+      return;
+    }
     this.paiementService.createPaiement(this.newPaiement.commandeId, this.newPaiement.mode)
-      .subscribe(() => this.loadAll());
+      .subscribe({
+        next: () => this.loadAll(),
+        error: (err) => alert('Erreur création paiement: ' + (err.error?.message || 'création impossible'))
+      });
   }
 
   traiter(id: number): void {
-    this.paiementService.traiterPaiement(id).subscribe(() => this.loadAll());
+    this.paiementService.traiterPaiement(id).subscribe({
+      next: () => this.loadAll(),
+      error: (err) => {
+        console.error('Erreur traitement paiement:', err);
+        this.paiementService.getPaiementById(id).subscribe({
+          next: (paiement) => {
+            if (paiement.statut !== 'EN_ATTENTE') {
+              this.loadAll();
+              return;
+            }
+
+            alert('Erreur traitement paiement: traitement impossible');
+          },
+          error: () => alert('Erreur traitement paiement: traitement impossible')
+        });
+      }
+    });
   }
 
   rembourser(id: number): void {
-    this.paiementService.rembourser(id).subscribe(() => this.loadAll());
+    this.paiementService.rembourser(id).subscribe({
+      next: () => this.loadAll(),
+      error: (err) => {
+        console.error('Erreur remboursement:', err);
+        this.paiementService.getPaiementById(id).subscribe({
+          next: (paiement) => {
+            if (paiement.statut === 'REMBOURSE') {
+              this.loadAll();
+              return;
+            }
+
+            alert('Erreur remboursement: remboursement impossible');
+          },
+          error: () => alert('Erreur remboursement: remboursement impossible')
+        });
+      }
+    });
   }
 
   getStatutClass(statut: string): string {
@@ -139,6 +208,21 @@ export class PaiementListComponent implements OnInit {
 
   getCommandeAmount(commandeId: number): string {
     const commande = this.commandes.find(c => c.id === commandeId);
-    return commande ? (commande.montantTotal || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '-';
+    return commande ? this.getMontantCommande(commande).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '-';
+  }
+
+  getMontantCommande(commande: Commande): number {
+    if (commande.montantTotal !== undefined && commande.montantTotal !== null) {
+      return commande.montantTotal;
+    }
+
+    if (!commande.lignesCommande || commande.lignesCommande.length === 0) {
+      return 0;
+    }
+
+    return commande.lignesCommande.reduce((total, ligne) => {
+      const sousTotal = ligne.sousTotal ?? (ligne.quantite * ligne.prixUnitaire);
+      return total + (sousTotal || 0);
+    }, 0);
   }
 }

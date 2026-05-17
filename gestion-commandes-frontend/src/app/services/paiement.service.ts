@@ -30,7 +30,8 @@ export class PaiementService {
   getPaiementByCommande(commandeId: number): Observable<Paiement> {
     return this.http.get<Paiement>(`${this.apiUrl}/commande/${commandeId}`);
   }
+
   getAllPaiements(): Observable<Paiement[]> {
-  return this.http.get<Paiement[]>(this.apiUrl);
-}
+    return this.http.get<Paiement[]>(this.apiUrl);
+  }
 }

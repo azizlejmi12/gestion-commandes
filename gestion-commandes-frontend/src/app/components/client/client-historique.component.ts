@@ -41,7 +41,7 @@ import { StatutCommande } from '../../models/statut-commande.enum';
                 {{ commande.statut }}
               </span>
             </td>
-            <td>{{ commande.montantTotal | currency:'EUR' }}</td>
+            <td>{{ getMontantCommande(commande) | currency:'EUR' }}</td>
             <td>{{ commande.lignesCommande.length || 0 }}</td>
 
           </tr>
@@ -107,6 +107,21 @@ export class ClientHistoriqueComponent implements OnInit {
   }
 
   getTotalDepense(): number {
-    return this.commandes.reduce((total, cmd) => total + (cmd.montantTotal || 0), 0);
+    return this.commandes.reduce((total, cmd) => total + this.getMontantCommande(cmd), 0);
+  }
+
+  getMontantCommande(cmd: Commande): number {
+    if (cmd.montantTotal !== undefined && cmd.montantTotal !== null) {
+      return cmd.montantTotal;
+    }
+
+    if (!cmd.lignesCommande || cmd.lignesCommande.length === 0) {
+      return 0;
+    }
+
+    return cmd.lignesCommande.reduce((total, ligne) => {
+      const sousTotal = ligne.sousTotal ?? (ligne.quantite * ligne.prixUnitaire);
+      return total + (sousTotal || 0);
+    }, 0);
   }
 }

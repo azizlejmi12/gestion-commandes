@@ -37,7 +37,7 @@ import { Commande } from '../../models/commande.model';
                 {{ commande.statut }}
               </span>
             </td>
-            <td>{{ commande.montantTotal | currency:'EUR' }}</td>
+            <td>{{ getMontantTotal(commande) | currency:'EUR' }}</td>
            <td>
                 <button class="btn btn-sm btn-info" [routerLink]="['/commandes', commande.id]">Voir</button>
                 <button class="btn btn-sm btn-warning" [routerLink]="['/commandes', commande.id, 'edit']" 
@@ -82,7 +82,20 @@ export class CommandeListComponent implements OnInit {
   validerCommande(id: number): void {
     this.commandeService.validerCommande(id).subscribe({
       next: () => this.loadCommandes(),
-      error: (err) => console.error('Erreur validation:', err)
+      error: (err) => {
+        console.error('Erreur validation:', err);
+        this.commandeService.getCommandeById(id).subscribe({
+          next: (commande) => {
+            if (commande.statut !== 'EN_ATTENTE') {
+              this.loadCommandes();
+              return;
+            }
+
+            alert('Erreur lors de la validation de la commande');
+          },
+          error: () => alert('Erreur lors de la validation de la commande')
+        });
+      }
     });
   }
   deleteCommande(id: number): void {
@@ -106,5 +119,20 @@ getStatutClass(statut: string): string {
     case 'ANNULEE': return 'badge bg-danger';
     default: return 'badge bg-secondary';
   }
+}
+
+getMontantTotal(commande: Commande): number {
+  if (commande.montantTotal !== undefined && commande.montantTotal !== null) {
+    return commande.montantTotal;
+  }
+
+  if (!commande.lignesCommande || commande.lignesCommande.length === 0) {
+    return 0;
+  }
+
+  return commande.lignesCommande.reduce((total, ligne) => {
+    const sousTotal = ligne.sousTotal ?? (ligne.quantite * ligne.prixUnitaire);
+    return total + (sousTotal || 0);
+  }, 0);
 }
 }

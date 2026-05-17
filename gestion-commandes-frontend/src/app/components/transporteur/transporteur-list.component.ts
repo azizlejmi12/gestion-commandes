@@ -12,6 +12,7 @@ import { Transporteur } from '../../models/transporteur.model';
   template: `
     <div class="container">
       <h2>Gestion des Transporteurs</h2>
+      <button class="btn btn-primary mb-3" routerLink="/transporteurs/new">+ Nouveau Transporteur</button>
 
       <!-- Formulaire Création/Modification -->
       <div class="card mb-4">
@@ -70,6 +71,9 @@ import { Transporteur } from '../../models/transporteur.model';
               <span *ngIf="!t.note" class="text-muted">Non noté</span>
             </td>
             <td>
+              <button class="btn btn-sm btn-info" [routerLink]="['/transporteurs', t.id]">
+                Voir
+              </button>
               <button class="btn btn-sm btn-warning" (click)="editTransporteur(t)">
                 ✏️ Modifier
               </button>

@@ -18,6 +18,7 @@ import { StatutLivraison } from '../../models/statut-livraison.enum';
   template: `
     <div class="container">
       <h2>Suivi des Livraisons</h2>
+      <button class="btn btn-primary mb-3" routerLink="/livraisons/new">+ Nouvelle Livraison</button>
       
       <!-- Créer livraison -->
       <div class="card mb-3">
@@ -98,6 +99,7 @@ import { StatutLivraison } from '../../models/statut-livraison.enum';
             </td>
             <td>{{ l.dateLivraison | date:'dd/MM/yyyy HH:mm' }}</td>
             <td>
+              <button class="btn btn-sm btn-info me-1" [routerLink]="['/livraisons', l.id]">Voir</button>
               <button class="btn btn-sm btn-info" 
                       (click)="expedier(l.id!)" 
                       *ngIf="l.statut === 'EN_PREPARATION'"
@@ -225,7 +227,20 @@ export class LivraisonListComponent implements OnInit {
           this.loadAll();
           alert('🚚 Livraison expédiée !');
         },
-        error: (err) => alert('❌ Erreur: ' + (err.error?.message || 'Expédition impossible'))
+        error: (err) => {
+          console.error('Erreur expédition:', err);
+          this.livraisonService.getLivraisonById(id).subscribe({
+            next: (livraison) => {
+              if (livraison.statut !== 'EN_PREPARATION') {
+                this.loadAll();
+                return;
+              }
+
+              alert('❌ Erreur: Expédition impossible');
+            },
+            error: () => alert('❌ Erreur: Expédition impossible')
+          });
+        }
       });
     }
   }
@@ -237,7 +252,20 @@ export class LivraisonListComponent implements OnInit {
           this.loadAll();
           alert('✅ Livraison terminée ! Commande livrée.');
         },
-        error: (err) => alert('❌ Erreur: ' + (err.error?.message || 'Livraison impossible'))
+        error: (err) => {
+          console.error('Erreur livraison:', err);
+          this.livraisonService.getLivraisonById(id).subscribe({
+            next: (livraison) => {
+              if (livraison.statut === 'LIVREE') {
+                this.loadAll();
+                return;
+              }
+
+              alert('❌ Erreur: Livraison impossible');
+            },
+            error: () => alert('❌ Erreur: Livraison impossible')
+          });
+        }
       });
     }
   }

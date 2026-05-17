@@ -21,18 +21,18 @@ export class LivraisonService {
 
   createLivraison(commandeId: number, transporteurId: number | null, cout: number): Observable<Livraison> {
     let url = `${this.apiUrl}/commande/${commandeId}?cout=${cout}`;
-    if (transporteurId) {
+    if (transporteurId !== null && transporteurId !== undefined) {
       url += `&transporteurId=${transporteurId}`;
     }
     return this.http.post<Livraison>(url, {});
   }
 
-  expedier(id: number): Observable<Livraison> {
-    return this.http.put<Livraison>(`${this.apiUrl}/${id}/expedier`, {});
+  expedier(id: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}/${id}/expedier`, {}, { responseType: 'text' });
   }
 
-  livrer(id: number): Observable<Livraison> {
-    return this.http.put<Livraison>(`${this.apiUrl}/${id}/livrer`, {});
+  livrer(id: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}/${id}/livrer`, {}, { responseType: 'text' });
   }
 
   getLivraisonByCommande(commandeId: number): Observable<Livraison> {

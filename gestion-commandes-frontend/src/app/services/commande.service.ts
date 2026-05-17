@@ -25,7 +25,7 @@ export class CommandeService {
   }
 
   updateCommande(id: number, commande: Commande): Observable<string> {
-    return this.http.put<string>(`${this.apiUrl}/${id}`, commande);
+    return this.http.put(`${this.apiUrl}/${id}`, commande, { responseType: 'text' });
   }
 
   deleteCommande(id: number): Observable<void> {
@@ -33,7 +33,7 @@ export class CommandeService {
   }
 
   validerCommande(id: number): Observable<string> {
-    return this.http.put<string>(`${this.apiUrl}/${id}/valider`, {});
+    return this.http.put(`${this.apiUrl}/${id}/valider`, {}, { responseType: 'text' });
   }
 
   getHistoriqueClient(clientId: number): Observable<Commande[]> {

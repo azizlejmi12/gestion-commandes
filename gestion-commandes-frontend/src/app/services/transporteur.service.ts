@@ -22,8 +22,8 @@ export class TransporteurService {
   createTransporteur(transporteur: Transporteur): Observable<Transporteur> {
     return this.http.post<Transporteur>(this.apiUrl, transporteur);
   }
-  updateTransporteur(id: number, transporteur: Transporteur): Observable<Transporteur> {
-    return this.http.put<Transporteur>(`${this.apiUrl}/${id}`, transporteur);
+  updateTransporteur(id: number, transporteur: Transporteur): Observable<string> {
+    return this.http.put(`${this.apiUrl}/${id}`, transporteur, { responseType: 'text' });
   }
   deleteTransporteur(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);

@@ -19,12 +19,12 @@ export class ClientService {
     return this.http.get<Client>(`${this.apiUrl}/${id}`);
   }
 
-  createClient(client: Client): Observable<Client> {
+  createClient(client: Pick<Client, 'nom' | 'email' | 'adresse'>): Observable<Client> {
     return this.http.post<Client>(this.apiUrl, client);
   }
 
-  updateClient(id: number, client: Client): Observable<Client> {
-    return this.http.put<Client>(`${this.apiUrl}/${id}`, client);
+  updateClient(id: number, client: Pick<Client, 'nom' | 'email' | 'adresse'>): Observable<string> {
+    return this.http.put(`${this.apiUrl}/${id}`, client, { responseType: 'text' });
   }
 
   deleteClient(id: number): Observable<void> {

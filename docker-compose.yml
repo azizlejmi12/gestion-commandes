@@ -1,0 +1,63 @@
+services:
+  # Service MySQL
+  db:
+    image: mysql:8.0
+    container_name: gestion-commandes-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gestion_commandes
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - gestion-commandes-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+      interval: 10s
+
+  # Service Backend (Spring Boot)
+  backend:
+    build:
+      context: ./gestion-commandes1
+      dockerfile: Dockerfile
+    container_name: gestion-commandes-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/gestion_commandes?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      SERVER_PORT: 8081
+    ports:
+      - "8084:8081"
+    networks:
+      - gestion-commandes-network
+    restart: unless-stopped
+
+  # Service Frontend (Angular + Nginx)
+  frontend:
+    build:
+      context: ./gestion-commandes-frontend
+      dockerfile: Dockerfile
+    container_name: gestion-commandes-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8085:80"
+    networks:
+      - gestion-commandes-network
+    restart: unless-stopped
+
+networks:
+  gestion-commandes-network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
